@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2F7D4F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Zakupy">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Zakupy</title>
+<style>
+:root{
+  --bg:#EEF3E6; --surface:#FFFFFF; --ink:#1E2B22; --muted:#7A8A7E; --accent:#2F7D4F; --accent-ink:#FFFFFF; --line:#DCE5D2; --danger:#C2443A;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#121A15; --surface:#1B261F; --ink:#E7F0E6; --muted:#8C9D90; --accent:#5CC088; --accent-ink:#0E1A12; --line:#2A3A2F; --danger:#E5776D;}
+}
+:root[data-theme="dark"]{--bg:#121A15; --surface:#1B261F; --ink:#E7F0E6; --muted:#8C9D90; --accent:#5CC088; --accent-ink:#0E1A12; --line:#2A3A2F; --danger:#E5776D;}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Nunito","Segoe UI",system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:520px;margin:0 auto;padding:28px 18px 40px}
+header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px}
+h1{font-size:34px;font-weight:800;margin:0;letter-spacing:-.02em}
+.count{color:var(--muted);font-size:15px;font-weight:600}
+form,.add{display:flex;gap:10px;margin-bottom:22px}
+input{flex:1;min-width:0;font:inherit;font-size:17px;padding:15px 18px;border-radius:16px;border:2px solid var(--line);background:var(--surface);color:var(--ink);outline:none}
+input:focus{border-color:var(--accent)}
+input::placeholder{color:var(--muted)}
+.btn{flex:none;width:54px;border:0;border-radius:16px;background:var(--accent);color:var(--accent-ink);font-size:28px;font-weight:700;cursor:pointer}
+.btn:active{transform:scale(.94)}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+li{display:flex;align-items:center;gap:14px;background:var(--surface);border-radius:16px;padding:14px 14px 14px 16px;box-shadow:0 1px 0 var(--line);animation:in .22s ease}
+@keyframes in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.chk{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--accent);background:transparent;cursor:pointer;display:grid;place-items:center;color:var(--accent-ink);font-size:16px;padding:0}
+li.done .chk{background:var(--accent)}
+.name{flex:1;font-size:18px;font-weight:600;word-break:break-word}
+li.done .name{text-decoration:line-through;color:var(--muted)}
+.del{flex:none;border:0;background:transparent;color:var(--muted);font-size:24px;width:40px;height:40px;border-radius:12px;cursor:pointer}
+.del:hover,.del:focus-visible{color:var(--danger)}
+.empty{text-align:center;color:var(--muted);padding:48px 10px;font-size:17px;line-height:1.5}
+.clear{display:block;margin:22px auto 0;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:15px;cursor:pointer;text-decoration:underline}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){li{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Zakupy</h1><span class="count" id="count"></span></header>
+  <div class="add">
+    <input id="inp" type="text" placeholder="Co kupić?" autocomplete="off" enterkeyhint="done" maxlength="80">
+    <button class="btn" id="addBtn" aria-label="Dodaj produkt">+</button>
+  </div>
+  <ul id="list"></ul>
+  <div class="empty" id="empty">Lista jest pusta.<br>Dodaj pierwszy produkt powyżej.</div>
+  <button class="clear" id="clear" hidden>Usuń zaznaczone</button>
+</div>
+<script>
+var KEY="zakupy-lista", items=[];
+try{items=JSON.parse(localStorage.getItem(KEY)||"[]")||[]}catch(e){items=[]}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){}}
+var $=function(i){return document.getElementById(i)};
+function render(){
+  var ul=$("list");ul.innerHTML="";
+  items.forEach(function(it){
+    var li=document.createElement("li");if(it.done)li.className="done";
+    var c=document.createElement("button");c.className="chk";c.setAttribute("aria-label","Zaznacz");c.textContent=it.done?"✓":"";
+    c.onclick=function(){it.done=!it.done;save();render()};
+    var n=document.createElement("span");n.className="name";n.textContent=it.name;
+    var d=document.createElement("button");d.className="del";d.setAttribute("aria-label","Usuń");d.textContent="×";
+    d.onclick=function(){items=items.filter(function(x){return x.id!==it.id});save();render()};
+    li.appendChild(c);li.appendChild(n);li.appendChild(d);ul.appendChild(li);
+  });
+  var left=items.filter(function(i){return !i.done}).length;
+  $("count").textContent=items.length?("do kupienia: "+left):"";
+  $("empty").hidden=items.length>0;
+  $("clear").hidden=!items.some(function(i){return i.done});
+}
+function add(){
+  var v=$("inp").value.trim();if(!v)return;
+  items.unshift({id:Date.now()+Math.random(),name:v,done:false});
+  $("inp").value="";save();render();$("inp").focus();
+}
+$("addBtn").onclick=add;
+$("inp").addEventListener("keydown",function(e){if(e.key==="Enter")add()});
+$("clear").onclick=function(){items=items.filter(function(i){return !i.done});save();render()};
+render();
+if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(function(){})}
+</script>
+</body>
+</html>
